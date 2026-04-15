@@ -1,0 +1,12 @@
+{
+  "name": "cbsd",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "components/*",
+    "apps/*"
+  ],
+  "dependencies": {
+    "ui-components": "^1.0.0"
+  }
+}
