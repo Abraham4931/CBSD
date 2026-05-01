@@ -6,6 +6,7 @@ const { default: logger } = await import("../../components/logger/index.cjs");
 const { default: notifier } = await import("../../components/notificationService/index.cjs");
 const { default: auth } = await import("../../components/auth-service/index.cjs");
 const { default: cache } = await import("../../components/cache-service/index.cjs");
+const { default: errorHandler } = await import("../../components/error-handler/index.cjs");
 
 async function main() {
   logger.info("Demo app starting...");
@@ -17,6 +18,7 @@ async function main() {
   // Auth: login before doing anything
   const token = auth.login("demo-user", "password123");
   if (!auth.isAuthenticated("demo-user")) {
+    errorHandler.handle(new Error("Authentication failed"), "auth-service");
     logger.error("User not authenticated, aborting.");
     return;
   }
@@ -36,7 +38,14 @@ async function main() {
   logger.info("Button clicked, fetching users...");
 
   // Data: fetch (cache-aware)
-  const data = await dataService.fetchData();
+  let data;
+  try {
+    data = await dataService.fetchData();
+  } catch (err) {
+    errorHandler.handle(err, "data-components");
+    logger.error("Failed to fetch data, aborting.");
+    return;
+  }
 
   logger.info("Displaying data:");
   data.forEach(user => logger.info(`- ${user}`));
@@ -56,6 +65,13 @@ async function main() {
   // Auth: logout
   auth.logout("demo-user");
   logger.info(`Still authenticated: ${auth.isAuthenticated("demo-user")}`);
+
+  // Error summary
+  if (errorHandler.hasErrors()) {
+    logger.error(`Demo finished with ${errorHandler.getErrors().length} error(s) logged`);
+  } else {
+    logger.info("Demo finished with no errors");
+  }
 
   logger.info("Demo app finished.");
 }

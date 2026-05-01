@@ -1,4 +1,5 @@
 const logger = require("../logger");
+const errorHandler = require("../error-handler");
 
 class CacheService {
   constructor() {
@@ -7,6 +8,10 @@ class CacheService {
   }
 
   set(key, value, ttlMs = null) {
+    if (!key) {
+      errorHandler.handle(new Error("Cache set called with no key"), "cache-service");
+      return;
+    }
     this.store[key] = value;
     if (ttlMs) {
       this.ttls[key] = setTimeout(() => {
@@ -28,6 +33,10 @@ class CacheService {
   }
 
   delete(key) {
+    if (!this.store[key] && !this.ttls[key]) {
+      errorHandler.handle(new Error(`Cache delete called on missing key: ${key}`), "cache-service");
+      return;
+    }
     if (this.ttls[key]) {
       clearTimeout(this.ttls[key]);
       delete this.ttls[key];

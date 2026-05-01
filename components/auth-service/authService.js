@@ -1,4 +1,5 @@
 const logger = require("../logger");
+const errorHandler = require("../error-handler");
 
 class AuthService {
   constructor() {
@@ -7,9 +8,8 @@ class AuthService {
 
   login(userId, password) {
     logger.info(`Login attempt for user: ${userId}`);
-    // Simulated credential check
     if (!userId || !password) {
-      logger.error(`Login failed for user: ${userId} - missing credentials`);
+      errorHandler.handle(new Error(`Missing credentials for user: ${userId}`), "auth-service");
       return null;
     }
     const token = `token_${userId}_${Date.now()}`;
@@ -21,7 +21,7 @@ class AuthService {
 
   logout(userId) {
     if (!this.sessions[userId]) {
-      logger.error(`Logout failed - no active session for user: ${userId}`);
+      errorHandler.handle(new Error(`Logout failed - no active session for user: ${userId}`), "auth-service");
       return false;
     }
     delete this.sessions[userId];
@@ -40,4 +40,17 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService();
+const instance = new AuthService();
+
+if (require.main === module) {
+  console.log("--- AuthService standalone test ---");
+  const token = instance.login("alice", "secret");
+  console.log("Token:", token);
+  console.log("Is authenticated:", instance.isAuthenticated("alice"));
+  instance.logout("alice");
+  console.log("After logout:", instance.isAuthenticated("alice"));
+  instance.logout("ghost"); // triggers error-handler
+  console.log("Errors logged:", errorHandler.getErrors("auth-service"));
+}
+
+module.exports = instance;
