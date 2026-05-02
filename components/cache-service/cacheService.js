@@ -1,5 +1,6 @@
 const logger = require("../logger");
 const errorHandler = require("../error-handler");
+const config = require("../config-service");
 
 class CacheService {
   constructor() {
@@ -12,12 +13,13 @@ class CacheService {
       errorHandler.handle(new Error("Cache set called with no key"), "cache-service");
       return;
     }
+    const resolvedTtl = ttlMs ?? config.get("cache.defaultTtlMs");
     this.store[key] = value;
-    if (ttlMs) {
+    if (resolvedTtl) {
       this.ttls[key] = setTimeout(() => {
         this.delete(key);
         logger.debug(`Cache expired: ${key}`);
-      }, ttlMs);
+      }, resolvedTtl);
     }
     logger.debug(`Cache set: ${key}`);
   }

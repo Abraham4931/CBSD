@@ -7,6 +7,7 @@ const { default: notifier } = await import("../../components/notificationService
 const { default: auth } = await import("../../components/auth-service/index.cjs");
 const { default: cache } = await import("../../components/cache-service/index.cjs");
 const { default: errorHandler } = await import("../../components/error-handler/index.cjs");
+const { default: config } = await import("../../components/config-service/index.cjs");
 
 async function main() {
   logger.info("Demo app starting...");
@@ -16,8 +17,8 @@ async function main() {
   const dataService = new DataService();
 
   // Auth: login before doing anything
-  const token = auth.login("demo-user", "password123");
-  if (!auth.isAuthenticated("demo-user")) {
+  const token = auth.login(config.get("auth.demoUser"), config.get("auth.demoPassword"));
+  if (!auth.isAuthenticated(config.get("auth.demoUser"))) {
     errorHandler.handle(new Error("Authentication failed"), "auth-service");
     logger.error("User not authenticated, aborting.");
     return;
@@ -27,9 +28,9 @@ async function main() {
   // Event: listen for data loaded event
   emitter.on("data:loaded", (data) => {
     logger.info("Event received: data:loaded");
-    notifier.notifyEmail("team@example.com", "Demo Data Loaded", `Loaded users: ${data.join(", ")}`);
-    notifier.notifySMS("+1234567890", "Demo data load complete");
-    notifier.notifyPush("demo-user", "User data has been fetched and displayed.");
+    notifier.notifyEmail(config.get("notifications.email"), "Demo Data Loaded", `Loaded users: ${data.join(", ")}`);
+    notifier.notifySMS(config.get("notifications.sms"), "Demo data load complete");
+    notifier.notifyPush(config.get("notifications.pushUserId"), "User data has been fetched and displayed.");
   });
 
   // UI: render and click button
@@ -63,8 +64,8 @@ async function main() {
   button.click();
 
   // Auth: logout
-  auth.logout("demo-user");
-  logger.info(`Still authenticated: ${auth.isAuthenticated("demo-user")}`);
+  auth.logout(config.get("auth.demoUser"));
+  logger.info(`Still authenticated: ${auth.isAuthenticated(config.get("auth.demoUser"))}`);
 
   // Error summary
   if (errorHandler.hasErrors()) {

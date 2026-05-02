@@ -3,6 +3,7 @@ const require = createRequire(import.meta.url);
 const cache = require("../cache-service");
 const logger = require("../logger");
 const errorHandler = require("../error-handler");
+const config = require("../config-service");
 
 export class DataService {
   constructor() {
@@ -18,12 +19,13 @@ export class DataService {
     }
 
     logger.info("DataService: cache miss, fetching data...");
+    const ttl = config.get("cache.defaultTtlMs");
 
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         try {
           this.data = ["User1", "User2", "User3"];
-          cache.set(cacheKey, this.data, 30000);
+          cache.set(cacheKey, this.data, ttl);
           logger.info("DataService: data fetched and cached");
           resolve(this.data);
         } catch (err) {
